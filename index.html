@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>CraxRat // Secure Terminal</title>
+<link rel="manifest" href="manifest.json">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{background:#000;color:#0f0;font-family:"Courier New",monospace;min-height:100vh;overflow-x:hidden;user-select:none}
+  #matrix{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;opacity:.18}
+  #warnBar{position:fixed;top:0;right:0;left:0;z-index:100;background:linear-gradient(180deg,#a00,#600);border-bottom:2px solid #f00;color:#fff;text-align:center;padding:9px 14px;font-size:.82rem;font-weight:bold;letter-spacing:1px;cursor:pointer;box-shadow:0 4px 16px rgba(255,0,0,.5);display:none;animation:warnPulse 2s infinite}
+  #warnBar.on{display:block}
+  #warnBar .box{display:inline-block;border:1.5px solid #fff;padding:2px 8px;border-radius:4px;margin-right:6px;font-size:.72rem}
+  @keyframes warnPulse{0%,100%{box-shadow:0 4px 16px rgba(255,0,0,.5)}50%{box-shadow:0 4px 26px rgba(255,0,0,.9)}}
+  body.warned .container{padding-top:70px}
+  .container{position:relative;z-index:2;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;transition:padding .3s}
+  .screen{width:100%;max-width:620px;background:rgba(0,10,0,.88);border:1px solid #0f0;border-radius:10px;padding:26px 22px;box-shadow:0 0 30px rgba(0,255,0,.3),inset 0 0 40px rgba(0,255,0,.05)}
+  .logo{text-align:center;font-size:2.2rem;font-weight:bold;color:#0f0;letter-spacing:6px;margin-bottom:6px;text-shadow:0 0 12px #0f0,0 0 24px #0f0;animation:glitch 3s infinite}
+  @keyframes glitch{0%,90%,100%{text-shadow:0 0 12px #0f0,0 0 24px #0f0}92%{text-shadow:-2px 0 #f00,2px 0 #0ff}94%{text-shadow:2px 0 #f00,-2px 0 #0ff}}
+  .sub{text-align:center;color:#0a0;font-size:.72rem;margin-bottom:22px;letter-spacing:2px}
+  .line{height:1px;background:linear-gradient(90deg,transparent,#0f0,transparent);margin:14px 0}
+  label{display:block;font-size:.78rem;color:#0a0;margin-bottom:6px;letter-spacing:1px}
+  input{width:100%;background:#001a00;border:1px solid #0a0;color:#0f0;padding:13px 14px;font-family:inherit;font-size:16px;border-radius:4px;margin-bottom:14px;outline:none;transition:.2s}
+  input:focus{border-color:#0f0;box-shadow:0 0 12px rgba(0,255,0,.4)}
+  input::placeholder{color:#063;font-size:.82rem}
+  button{width:100%;background:#0f0;color:#000;border:none;padding:14px;font-family:inherit;font-weight:bold;font-size:.98rem;letter-spacing:2px;cursor:pointer;border-radius:4px;transition:.2s}
+  button:active{background:#0c0;box-shadow:0 0 20px #0f0;transform:scale(.98)}
+  button:disabled{background:#030;color:#0a0;cursor:not-allowed;box-shadow:none}
+  .err{color:#f33;text-align:center;font-size:.84rem;margin-top:10px;min-height:20px}
+  .ok{color:#0f0}
+  .welcome{text-align:center;margin-bottom:6px;font-size:1.2rem;color:#0f0;letter-spacing:2px}
+  .welcome-sub{text-align:center;color:#0a0;font-size:.76rem;margin-bottom:20px}
+  .apps{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
+  .app-btn{background:#001a00;border:1px solid #0a0;color:#0f0;padding:15px 8px;font-family:inherit;font-size:.88rem;cursor:pointer;border-radius:6px;transition:.2s;letter-spacing:1px}
+  .app-btn:active{background:#003300;box-shadow:0 0 14px rgba(0,255,0,.5)}
+  .app-btn.full{grid-column:span 2}
+  .loader{text-align:center;padding:14px 0}
+  .planet{width:110px;height:110px;margin:0 auto 20px;position:relative}
+  .planet .ring{position:absolute;inset:0;border:2px solid transparent;border-top-color:#0f0;border-right-color:#0a0;border-radius:50%;animation:spin 1.1s linear infinite}
+  .planet .ring:nth-child(2){inset:14px;border-top-color:#0ff;animation-duration:1.6s;animation-direction:reverse}
+  .planet .ring:nth-child(3){inset:28px;border-top-color:#0f0;animation-duration:2.2s}
+  .planet .core{position:absolute;inset:42px;background:#0f0;border-radius:50%;box-shadow:0 0 24px #0f0;animation:pulse 1.2s ease-in-out infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
+  .load-text{color:#0f0;font-size:.88rem;letter-spacing:2px;min-height:24px}
+  .dots::after{content:'';animation:dots 1.2s steps(4,end) infinite}
+  @keyframes dots{0%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}}
+  .log{text-align:right;font-size:.7rem;color:#0a0;margin-top:14px;line-height:1.9;direction:ltr;font-family:monospace}
+  .result-title{color:#f33;text-align:center;font-size:1.1rem;letter-spacing:3px;margin-bottom:14px;text-shadow:0 0 12px #f33;animation:blink 1s infinite}
+  @keyframes blink{50%{opacity:.5}}
+  .data-row{display:flex;justify-content:space-between;gap:8px;padding:9px 11px;border:1px solid #063;border-radius:4px;margin-bottom:5px;background:#001200;font-size:.82rem;direction:ltr}
+  .data-row .k{color:#0a0;white-space:nowrap}
+  .data-row .v{color:#0f0;font-weight:bold;text-align:left;word-break:break-all}
+  .data-row .v.hot{color:#ff0;text-shadow:0 0 8px #ff0}
+  .status-badge{display:inline-block;padding:3px 9px;border-radius:3px;font-size:.7rem;letter-spacing:1px}
+  .badge-ok{background:#030;color:#0f0;border:1px solid #0f0}
+  .badge-warn{background:#330;color:#ff0;border:1px solid #ff0}
+  .badge-danger{background:#300;color:#f33;border:1px solid #f33}
+  .cursor{display:inline-block;width:8px;height:14px;background:#0f0;animation:blink .7s infinite;vertical-align:middle}
+  .hint{color:#063;font-size:.7rem;text-align:center;margin-top:12px;letter-spacing:1px}
+  .ascii{color:#0a0;font-size:.5rem;line-height:1.2;text-align:center;margin-bottom:12px;white-space:pre;overflow:hidden}
+  .offline-screen{text-align:center;padding:40px 20px}
+  .offline-screen h1{color:#f00;font-size:2rem;letter-spacing:4px;text-shadow:0 0 20px #f00,0 0 40px #f00;animation:blink 1.2s infinite;margin-bottom:20px;font-weight:900}
+  .offline-screen p{color:#f33;font-size:1rem;letter-spacing:2px;margin-bottom:14px}
+  .offline-screen .code{color:#900;font-size:.75rem;font-family:monospace;margin-top:26px;line-height:1.8}
+  .warn-title{color:#f00;text-align:center;font-size:1.3rem;letter-spacing:3px;margin-bottom:16px;text-shadow:0 0 14px #f00;animation:blink 1.4s infinite;font-weight:900}
+  .warn-text{color:#eee;font-size:.9rem;line-height:2;text-align:center;margin-bottom:26px;background:#1a0000;border:1px solid #600;border-radius:8px;padding:16px}
+  .contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+  .contact-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:22px 10px;border-radius:12px;text-decoration:none;cursor:pointer;transition:.25s;border:2px solid}
+  .contact-btn:active{transform:scale(.95)}
+  .contact-btn .ic{width:48px;height:48px;display:grid;place-items:center}
+  .contact-btn .ic svg{width:100%;height:100%}
+  .contact-btn .lbl{font-size:.8rem;font-weight:bold;letter-spacing:1px}
+  .contact-wa{background:#001a00;border-color:#25D366;color:#25D366;box-shadow:0 0 20px rgba(37,211,102,.3)}
+  .contact-fb{background:#000a1a;border-color:#1877F2;color:#1877F2;box-shadow:0 0 20px rgba(24,119,242,.3)}
+</style>
+</head>
+<body>
+<canvas id="matrix"></canvas>
+<div id="warnBar">⚠ تحذير امني <span class="box">اضغط لمعرفة المزيد</span></div>
+<div class="container"><div class="screen" id="screen"></div></div>
+<script>
+const SUPPORT = { whatsapp: '201067592679', facebook: 'https://www.facebook.com/share/1FfrumG6qe/' };
+const cvs = document.getElementById('matrix');
+const ctx = cvs.getContext('2d');
+let cols, drops;
+function initMatrix(){cvs.width=window.innerWidth;cvs.height=window.innerHeight;cols=Math.floor(cvs.width/16);drops=Array(cols).fill(1);}
+initMatrix();
+window.addEventListener('resize', initMatrix);
+const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ@#$%&*';
+function drawMatrix(){ctx.fillStyle='rgba(0,0,0,.06)';ctx.fillRect(0,0,cvs.width,cvs.height);ctx.fillStyle='#0f0';ctx.font='15px monospace';for(let i=0;i<drops.length;i++){const t=chars[Math.floor(Math.random()*chars.length)];ctx.fillText(t,i*16,drops[i]*16);if(drops[i]*16>cvs.height&&Math.random()>.975)drops[i]=0;drops[i]++;}}
+setInterval(drawMatrix, 45);
+const state = { user:null, app:null };
+const screen = document.getElementById('screen');
+const warnBar = document.getElementById('warnBar');
+const ascii = `
+ ██████╗██████╗  █████╗ ██╗  ██╗██████╗  █████╗ ████████╗
+██╔════╝██╔══██╗██╔══██╗╚██╗██╔╝██╔══██╗██╔══██╗╚══██╔══╝
+██║     ██████╔╝███████║ ╚███╔╝ ██████╔╝███████║   ██║   
+██║     ██╔══██╗██╔══██║ ██╔██╗ ██╔══██╗██╔══██║   ██║   
+╚██████╗██║  ██║██║  ██║██╔╝ ██╗██║  ██║██║  ██║   ██║   
+ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   
+`;
+function hashStr(str){let h=2166136261;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619);}return Math.abs(h);}
+function seededRand(seed){let s=seed%2147483647;if(s<=0)s+=2147483646;return()=>{s=(s*16807)%2147483647;return(s-1)/2147483646;};}
+function randHex(n){let s='';const h='0123456789ABCDEF';for(let i=0;i<n;i++)s+=h[Math.floor(Math.random()*16)];return s;}
+function randHexSeeded(rnd,n){let s='';const h='0123456789ABCDEF';for(let i=0;i<n;i++)s+=h[Math.floor(rnd()*16)];return s;}
+warnBar.addEventListener('click', renderWarnPage);
+function showWarnBar(){warnBar.classList.add('on');document.body.classList.add('warned');}
+function hideWarnBar(){warnBar.classList.remove('on');document.body.classList.remove('warned');}
+async function checkRealConnection(){try{const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),4000);await fetch('https://1.1.1.1/cdn-cgi/trace',{method:'GET',mode:'no-cors',cache:'no-store',signal:ctrl.signal});clearTimeout(timer);return true;}catch(e){return false;}}
+function renderLogin(){hideWarnBar();screen.innerHTML=`<pre class="ascii">${ascii}</pre><div class="logo">CraxRat</div><div class="sub">// SECURE ACCESS TERMINAL v4.2.1 //</div><div class="line"></div><label>USERNAME</label><input id="u" type="text" placeholder="enter username" autocomplete="off"><label>PASSWORD</label><input id="p" type="password" placeholder="enter password" autocomplete="off"><button id="loginBtn">ACCESS SYSTEM</button><div class="err" id="err"></div>`;const u=document.getElementById('u');const p=document.getElementById('p');const err=document.getElementById('err');const btn=document.getElementById('loginBtn');btn.onclick=async()=>{err.textContent='';btn.disabled=true;btn.textContent='AUTHENTICATING...';const online=await checkRealConnection();if(!online){renderOffline();return;}setTimeout(()=>{if(u.value.trim()==='access'&&p.value==='01x'){err.className='err ok';err.textContent='✔ ACCESS GRANTED';setTimeout(()=>{state.user=u.value.trim();showWarnBar();renderWelcome();},700);}else{err.className='err';err.textContent='✘ ACCESS DENIED — INVALID CREDENTIALS';btn.disabled=false;btn.textContent='ACCESS SYSTEM';p.value='';}},900);};p.addEventListener('keypress',e=>{if(e.key==='Enter')btn.click();});}
+function renderOffline(){hideWarnBar();screen.innerHTML=`<div class="offline-screen"><h1>⚠ NO SIGNAL ⚠</h1><p>لا يوجد اتصال بخادم CraxRat</p><p style="color:#f66;font-size:.85rem">يرجى التحقق من الاتصال بالإنترنت</p><div class="code">[ERR_CONNECTION_REFUSED]<br>[SERVER_UNREACHABLE]<br>[RETRY: FAILED]</div><button style="margin-top:26px;max-width:220px;margin-inline:auto" onclick="location.reload()">RETRY</button></div>`;}
+function renderWelcome(){const apps=[{id:'facebook',name:'Facebook',full:false},{id:'whatsapp',name:'WhatsApp',full:false},{id:'gmail',name:'Gmail',full:false},{id:'instagram',name:'Instagram',full:false},{id:'snapchat',name:'Snapchat',full:false},{id:'telegram',name:'Telegram',full:false},{id:'other',name:'Other Apps',full:true}];screen.innerHTML=`<div class="logo" style="font-size:1.7rem">CraxRat</div><div class="line"></div><div class="welcome">Welcome Eng_Islam</div><div class="welcome-sub">يرجى اختيار التطبيق لبدء الفحوصات</div><div class="apps">${apps.map(a=>`<button class="app-btn ${a.full?'full':''}" data-app="${a.id}">${a.name}</button>`).join('')}</div><div class="hint">// SELECT TARGET APPLICATION //</div>`;screen.querySelectorAll('.app-btn').forEach(b=>{b.onclick=()=>{state.app=b.dataset.app;renderLoading();};});}
+function renderLoading(){const appNames={facebook:'Facebook',whatsapp:'WhatsApp',gmail:'Gmail',instagram:'Instagram',snapchat:'Snapchat',telegram:'Telegram',other:'External Server'};const target=appNames[state.app];screen.innerHTML=`<div class="logo" style="font-size:1.3rem">CraxRat</div><div class="line"></div><div class="loader"><div class="planet"><div class="ring"></div><div class="ring"></div><div class="ring"></div><div class="core"></div></div><div class="load-text">جاري الاتصال بالخادم<span class="dots"></span></div></div><div class="log" id="log"></div>`;const log=document.getElementById('log');const logs=[`> initializing tunnel to ${target}...`,`> bypassing firewall [${randHex(4)}]...`,`> injecting payload [${randHex(6)}]...`,`> escalating privileges...`,`> decrypting session keys...`,`> handshake established ✔`,`> awaiting target query...`];let i=0;const logTimer=setInterval(()=>{if(i<logs.length){const d=document.createElement('div');d.textContent=logs[i];log.appendChild(d);i++;}else clearInterval(logTimer);},600);const wait=Math.floor(Math.random()*25000)+5000;setTimeout(()=>{clearInterval(logTimer);renderSearch();},wait);}
+function renderSearch(){const isOther=state.app==='other';const hints={facebook:'مثال: ahmed.mohamed',whatsapp:'مثال: +201234567890',gmail:'مثال: username@gmail.com',instagram:'مثال: @username',snapchat:'مثال: username',telegram:'مثال: @username',other:'مثال: ahmed_user'};screen.innerHTML=`<div class="logo" style="font-size:1.2rem">CraxRat</div><div class="sub">TARGET: ${(state.app||'').toUpperCase()}</div><div class="line"></div>${isOther?`<label>APPLICATION NAME</label><input id="otherApp" type="text" placeholder="TikTok, Twitter, ..." autocomplete="off">`:''}<label>${isOther?'USERNAME / ID':'TARGET USERNAME'}</label><input id="target" type="text" placeholder="${hints[state.app]}" autocomplete="off"><button id="searchBtn">بحث كامل</button><div class="hint">// FULL SCAN INITIATED //</div>`;document.getElementById('searchBtn').onclick=()=>{const t=document.getElementById('target').value.trim();const o=isOther?document.getElementById('otherApp').value.trim():'';if(!t||(isOther&&!o))return;renderScanning(o,t);};}
+function renderScanning(otherApp, target){const key=(state.app==='other'?otherApp+'::':'')+target;const seed=hashStr(key+'|'+state.app);const rnd=seededRand(seed);const days=450+Math.floor(rnd()*(2100-450+1));const ip=`${Math.floor(rnd()*200)+10}.${Math.floor(rnd()*255)}.${Math.floor(rnd()*255)}.${Math.floor(rnd()*255)}`;const port=Math.floor(rnd()*60000)+1024;const deviceId='DEV-'+randHexSeeded(rnd,8);const lat=(rnd()*180-90).toFixed(4);const lon=(rnd()*360-180).toFixed(4);const devices=['Android 13','iPhone 15 Pro','Windows 11','Kali Linux','macOS Sonoma'];const device=devices[Math.floor(rnd()*devices.length)];const carrier=['Vodafone','Orange','Etisalat','WE','STC'][Math.floor(rnd()*5)];const macAddr=Array.from({length:6},()=>randHexSeeded(rnd,2)).join(':');screen.innerHTML=`<div class="logo" style="font-size:1.2rem">CraxRat</div><div class="sub">SCANNING TARGET...</div><div class="line"></div><div class="loader"><div class="planet"><div class="ring"></div><div class="ring"></div><div class="ring"></div><div class="core"></div></div><div class="load-text" id="scanText">جاري استخراج البيانات<span class="dots"></span></div></div><div class="log" id="slog"></div>`;const slog=document.getElementById('slog');const steps=[`> resolving target: ${target}`,`> querying ${state.app.toUpperCase()} databases...`,`> extracting metadata...`,`> recovering last activity...`,`> triangulating geo-location...`,`> compiling report [${randHex(6)}]...`,`> DONE ✔`];let i=0;const t=setInterval(()=>{if(i<steps.length){const d=document.createElement('div');d.textContent=steps[i];slog.appendChild(d);i++;}else clearInterval(t);},500);setTimeout(()=>{clearInterval(t);renderResult({days,ip,port,deviceId,lat,lon,device,carrier,macAddr,target,otherApp});},3200);}
+function renderResult(d){const status=d.days<700?'badge-danger':d.days<1300?'badge-warn':'badge-ok';const statusText=d.days<700?'ACTIVE NOW':d.days<1300?'RECENT':'INACTIVE';const targetLabel=d.otherApp?`${d.otherApp} — ${d.target}`:d.target;screen.innerHTML=`<div class="logo" style="font-size:1.2rem">CraxRat</div><div class="sub">SCAN COMPLETE — REPORT #${randHex(6)}</div><div class="line"></div><div class="result-title">⚠ TARGET LOCATED ⚠</div><div class="data-row"><span class="k">TARGET</span><span class="v hot">${targetLabel}</span></div><div class="data-row"><span class="k">PLATFORM</span><span class="v">${state.app.toUpperCase()}</span></div><div class="data-row"><span class="k">IP</span><span class="v">${d.ip}:${d.port}</span></div><div class="data-row"><span class="k">MAC</span><span class="v">${d.macAddr}</span></div><div class="data-row"><span class="k">DEVICE ID</span><span class="v">${d.deviceId}</span></div><div class="data-row"><span class="k">DEVICE</span><span class="v">${d.device}</span></div><div class="data-row"><span class="k">CARRIER</span><span class="v">${d.carrier}</span></div><div class="data-row"><span class="k">GPS</span><span class="v">${d.lat}, ${d.lon}</span></div><div class="data-row"><span class="k">LAST SEEN</span><span class="v hot">${d.days} يوم</span></div><div class="data-row"><span class="k">STATUS</span><span class="v"><span class="status-badge ${status}">${statusText}</span></span></div><div class="line"></div><div style="text-align:center;color:#0a0;font-size:.72rem;letter-spacing:1px">// SESSION ENCRYPTED · TRACE DISABLED · <span class="cursor"></span></div><button id="back" style="margin-top:18px">◄ فحص جديد</button>`;document.getElementById('back').onclick=renderWelcome;}
+function renderWarnPage(){screen.innerHTML=`<div class="warn-title">⚠ تحذير أمني ⚠</div><div class="warn-text">في حالة وجود أي مشاكل في خادم الاتصال<br>يرجى تحديث ملفات الفحص<br>وإذا استمرت المشكلة تواصل مع الدعم عن طريق:</div><div class="contact-grid"><a class="contact-btn contact-wa" id="waBtn"><div class="ic"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg></div><div class="lbl">WhatsApp</div></a><a class="contact-btn contact-fb" id="fbBtn"><div class="ic"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></div><div class="lbl">Facebook</div></a></div><button id="backFromWarn" style="background:#300;color:#f33;border:1px solid #f33">◄ رجوع</button>`;document.getElementById('waBtn').onclick=()=>{window.open('https://wa.me/'+SUPPORT.whatsapp,'_blank');};document.getElementById('fbBtn').onclick=()=>{window.open(SUPPORT.facebook,'_blank');};document.getElementById('backFromWarn').onclick=()=>{if(state.user)renderWelcome();else renderLogin();};}
+renderLogin();
+if('serviceWorker' in navigator){navigator.serviceWorker.register('/service-worker.js').catch(()=>{});}
+</script>
+</body>
+</html>
